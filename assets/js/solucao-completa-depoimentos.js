@@ -1,5 +1,5 @@
 function corrigirDepoimentos() {
-    console.log('🔧 Iniciando correção dos depoimentos...');
+    // console.log('🔧 Iniciando correção dos depoimentos...');
     
     // Selecionar elementos
     const testimonialCards = document.querySelectorAll('.testimonial__card');
@@ -7,11 +7,11 @@ function corrigirDepoimentos() {
     const prevBtn = document.querySelector('#testimonials-prev, .testimonials__prev');
     
     if (testimonialCards.length === 0) {
-        console.log('❌ Nenhum card de depoimento encontrado');
+        // console.log('❌ Nenhum card de depoimento encontrado');
         return;
     }
     
-    console.log(`✅ Encontrados ${testimonialCards.length} depoimentos`);
+    // console.log(`✅ Encontrados ${testimonialCards.length} depoimentos`);
     
     let currentIndex = 0;
     
@@ -27,7 +27,7 @@ function corrigirDepoimentos() {
         if (testimonialCards[index]) {
             testimonialCards[index].style.display = 'block';
             testimonialCards[index].classList.add('active');
-            console.log(`📄 Mostrando depoimento ${index + 1}`);
+            // console.log(`📄 Mostrando depoimento ${index + 1}`);
         }
     }
     
@@ -48,20 +48,20 @@ function corrigirDepoimentos() {
         nextBtn.replaceWith(nextBtn.cloneNode(true));
         const newNextBtn = document.querySelector('#testimonials-next, .testimonials__next');
         newNextBtn.addEventListener('click', proximoDepoimento);
-        console.log('✅ Botão próximo configurado');
+        // console.log('✅ Botão próximo configurado');
     }
     
     if (prevBtn) {
         prevBtn.replaceWith(prevBtn.cloneNode(true));
         const newPrevBtn = document.querySelector('#testimonials-prev, .testimonials__prev');
         newPrevBtn.addEventListener('click', depoimentoAnterior);
-        console.log('✅ Botão anterior configurado');
+        // console.log('✅ Botão anterior configurado');
     }
     
     // Mostrar o primeiro depoimento
     mostrarDepoimento(0);
     
-    console.log('🎉 Correção dos depoimentos concluída!');
+    // console.log('🎉 Correção dos depoimentos concluída!');
     
     // Retornar funções para uso externo
     return {
