@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análise de Mercado - Serviços Digitais (Brasil)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals -->
+    <!-- Application Structure Plan: A single-page dashboard structure was chosen for its clarity and ease of use. The main interaction is a set of buttons at the top that act as filters for different services (Landing Pages, Chatbots, etc.). Clicking a button updates a central content area, which includes a price range chart, a list of influencing factors, and common pricing models. This master-detail flow allows the user to focus on one service at a time, preventing information overload and making comparisons intuitive. The structure is designed to directly support business decisions by providing a clear, contextualized view of the market for each service offered by Syntaxa. -->
+    <!-- Visualization & Content Choices: 
+        - Service Selection: Goal: Navigation -> Method: Buttons -> Interaction: Click to update view -> Justification: Simple, universally understood navigation pattern for filtering content.
+        - Price Ranges: Goal: Compare -> Viz: Horizontal Bar Chart (Chart.js) -> Interaction: Hover for tooltips with exact values -> Justification: A horizontal bar chart is ideal for comparing a few distinct values (Min, Avg, Max) and is highly readable. It provides an immediate visual sense of the price spread for each service.
+        - Influencing Factors: Goal: Inform -> Method: Styled List (HTML/Tailwind) -> Interaction: Static -> Justification: A bulleted list is the clearest and most scannable way to present qualitative factors that affect pricing.
+        - Pricing Models: Goal: Organize -> Method: Tag-like Badges (HTML/Tailwind) -> Interaction: Static -> Justification: Badges visually distinguish the different pricing models (e.g., 'Projeto Único', 'Mensalidade'), making them easy to identify.
+        - Library/Method: Chart.js for visualizations on a <canvas> element. All other visual elements are built with semantic HTML and styled with Tailwind CSS.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 350px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .btn-active {
+            background-color: #2563eb; /* bg-blue-600 */
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div class="container mx-auto p-4 sm:p-6 md:p-8">
+        
+        <header class="text-center mb-8 md:mb-12">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-900">Análise de Mercado</h1>
+            <p class="text-md md:text-lg text-slate-600 mt-2">Valores de Referência para Serviços Digitais no Brasil</p>
+        </header>
+
+        <main>
+            <div class="bg-white rounded-xl shadow-md p-6">
+                
+                <div class="mb-8">
+                    <h2 class="text-xl font-semibold text-slate-800 mb-1">Explore os Serviços</h2>
+                    <p class="text-slate-500 mb-4">Selecione um serviço para ver a análise de preços, fatores de influência e modelos de negócio comuns no mercado brasileiro.</p>
+                    <div id="service-buttons" class="flex flex-wrap gap-2 justify-center">
+                    </div>
+                </div>
+
+                <div id="service-details" class="transition-opacity duration-300 ease-in-out">
+                    <div class="border-t border-slate-200 pt-6">
+                        <h3 id="service-title" class="text-2xl font-bold text-center text-blue-600 mb-2"></h3>
+                        <p id="service-description" class="text-center text-slate-600 max-w-3xl mx-auto mb-8"></p>
+                        
+                        <div class="grid md:grid-cols-5 gap-8">
+                            
+                            <div class="md:col-span-3">
+                                <h4 class="font-semibold text-lg text-slate-800 mb-4 text-center">Faixa de Preço Estimada (BRL)</h4>
+                                <div class="chart-container">
+                                    <canvas id="priceChart"></canvas>
+                                </div>
+                            </div>
+                            
+                            <div class="md:col-span-2">
+                                <div class="bg-slate-50 rounded-lg p-4 h-full">
+                                    <h4 class="font-semibold text-lg text-slate-800 mb-3 text-center">Fatores Chave de Precificação</h4>
+                                    <ul id="price-factors" class="list-none space-y-2 text-slate-600">
+                                    </ul>
+                                </div>
+                            </div>
+
+                        </div>
+                        
+                        <div class="mt-8 border-t border-slate-200 pt-6">
+                            <h4 class="font-semibold text-lg text-slate-800 mb-4 text-center">Modelos de Negócio Comuns</h4>
+                            <div id="pricing-models" class="flex flex-wrap gap-3 justify-center">
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="text-center mt-12">
+            <p class="text-sm text-slate-500">Dados compilados e analisados como referência de mercado em 2024. Os valores são estimativas e podem variar.</p>
+            <p class="text-sm text-slate-500 mt-1">Análise gerada para <span class="font-semibold">Syntaxa</span>.</p>
+        </footer>
+    </div>
+
+    <script>
+        const marketData = {
+            'landing-page': {
+                title: 'Criação de Landing Pages',
+                description: 'Páginas únicas focadas em conversão, essenciais para campanhas de marketing, lançamento de produtos ou captura de leads.',
+                prices: {
+                    labels: ['Mínimo', 'Médio', 'Máximo'],
+                    values: [1500, 3500, 7000]
+                },
+                factors: [
+                    '🎨 Nível de personalização do design',
+                    '📝 Produção de conteúdo (copywriting)',
+                    '🔄 Integrações (CRM, automação de marketing)',
+                    '📈 Otimização para conversão (CRO)',
+                    '📱 Complexidade da responsividade'
+                ],
+                models: [
+                    { name: 'Projeto Único', desc: 'Pagamento único pela criação e entrega da página.' },
+                    { name: 'Mensalidade', desc: 'Inclui hospedagem, manutenção e suporte contínuo.' }
+                ]
+            },
+            'chatbot': {
+                title: 'Desenvolvimento de Chatbots',
+                description: 'Assistentes virtuais para automação de atendimento, qualificação de leads e suporte ao cliente em sites e aplicativos de mensagens.',
+                prices: {
+                    labels: ['Básico', 'Intermediário', 'Avançado'],
+                    values: [2000, 6000, 15000]
+                },
+                factors: [
+                    '🧠 Complexidade do fluxo de conversa',
+                    '🤖 Uso de Inteligência Artificial (NLU/NLP)',
+                    '🔄 Número de integrações com sistemas externos',
+                    '📊 Painel de análise e relatórios',
+                    '💬 Canais de implantação (Site, WhatsApp, etc.)'
+                ],
+                models: [
+                    { name: 'Setup + Mensalidade', desc: 'Custo inicial de desenvolvimento mais uma taxa mensal pela plataforma e manutenção.' },
+                    { name: 'Projeto Único', desc: 'Pagamento único para chatbots mais simples e com escopo fechado.' }
+                ]
+            },
+            'ai-assistant': {
+                title: 'Assistentes de IA Personalizados',
+                description: 'Soluções de IA mais complexas, treinadas com dados específicos da empresa para automatizar processos internos, analisar dados ou potencializar a tomada de decisão.',
+                prices: {
+                    labels: ['Prova de Conceito', 'Projeto Médio', 'Larga Escala'],
+                    values: [10000, 30000, 80000]
+                },
+                factors: [
+                    '📚 Volume e qualidade dos dados para treinamento',
+                    '🎯 Complexidade do problema a ser resolvido',
+                    '🔗 Integração com sistemas legados (ERPs, etc.)',
+                    '⚙️ Necessidade de infraestrutura de nuvem',
+                    '🔒 Requisitos de segurança e conformidade'
+                ],
+                models: [
+                    { name: 'Projeto de Consultoria', desc: 'Escopo definido com fases de descoberta, desenvolvimento e implantação.' },
+                    { name: 'Licenciamento (SaaS)', desc: 'Uso da solução através de uma assinatura, comum para produtos de IA mais padronizados.' }
+                ]
+            },
+            'system-integration': {
+                title: 'Integração de Sistemas e APIs',
+                description: 'Conexão de diferentes softwares e plataformas para automatizar fluxos de trabalho, centralizar dados e criar operações mais eficientes.',
+                prices: {
+                    labels: ['Simples', 'Moderada', 'Complexa'],
+                    values: [4000, 12000, 25000]
+                },
+                factors: [
+                    '↔️ Número de sistemas a serem integrados',
+                    '📦 Complexidade das APIs (REST, SOAP, etc.)',
+                    '⚙️ Lógica de transformação de dados',
+                    '📈 Volume de dados transacionados',
+                    '🛡️ Requisitos de monitoramento e segurança'
+                ],
+                models: [
+                    { name: 'Projeto Único', desc: 'Preço fixo para o desenvolvimento de uma integração específica.' },
+                    { name: 'Bolsa de Horas', desc: 'Contratação de um pacote de horas para manutenções e novas integrações.' }
+                ]
+            }
+        };
+
+        let currentChart = null;
+
+        const serviceButtonsContainer = document.getElementById('service-buttons');
+        const serviceTitleEl = document.getElementById('service-title');
+        const serviceDescriptionEl = document.getElementById('service-description');
+        const priceFactorsEl = document.getElementById('price-factors');
+        const pricingModelsEl = document.getElementById('pricing-models');
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 }).format(value);
+        }
+
+        function updateView(serviceId) {
+            const data = marketData[serviceId];
+            if (!data) return;
+
+            serviceTitleEl.textContent = data.title;
+            serviceDescriptionEl.textContent = data.description;
+
+            priceFactorsEl.innerHTML = '';
+            data.factors.forEach(factor => {
+                const li = document.createElement('li');
+                li.className = 'flex items-start';
+                li.innerHTML = `<span class="mr-2 pt-1">${factor.match(/[\u{1F300}-\u{1F64F}]/u) ? factor.match(/[\u{1F300}-\u{1F64F}]/u)[0] : '•'}</span><span class="flex-1">${factor.replace(/[\u{1F300}-\u{1F64F}]/u, '').trim()}</span>`;
+                priceFactorsEl.appendChild(li);
+            });
+
+            pricingModelsEl.innerHTML = '';
+            data.models.forEach(model => {
+                const div = document.createElement('div');
+                div.className = 'bg-blue-100 text-blue-800 rounded-lg p-4 text-center w-full sm:w-auto sm:max-w-xs';
+                div.innerHTML = `
+                    <p class="font-semibold">${model.name}</p>
+                    <p class="text-sm mt-1">${model.desc}</p>
+                `;
+                pricingModelsEl.appendChild(div);
+            });
+
+            updateChart(data.prices);
+
+            document.querySelectorAll('#service-buttons button').forEach(button => {
+                if (button.dataset.service === serviceId) {
+                    button.classList.add('btn-active');
+                } else {
+                    button.classList.remove('btn-active');
+                }
+            });
+        }
+
+        function createChart() {
+            const ctx = document.getElementById('priceChart').getContext('2d');
+            currentChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Preço Estimado (BRL)',
+                        data: [],
+                        backgroundColor: ['#93c5fd', '#3b82f6', '#1e40af'],
+                        borderColor: ['#60a5fa', '#2563eb', '#1d4ed8'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'R$ ' + (value / 1000) + 'k';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return formatCurrency(context.raw);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateChart(priceData) {
+            if (!currentChart) {
+                createChart();
+            }
+            currentChart.data.labels = priceData.labels;
+            currentChart.data.datasets[0].data = priceData.values;
+            currentChart.update();
+        }
+
+        function initialize() {
+            Object.keys(marketData).forEach(key => {
+                const button = document.createElement('button');
+                button.dataset.service = key;
+                button.textContent = marketData[key].title;
+                button.className = 'px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200 bg-slate-200 text-slate-700 hover:bg-slate-300';
+                button.addEventListener('click', () => updateView(key));
+                serviceButtonsContainer.appendChild(button);
+            });
+            
+            createChart();
+            updateView('landing-page');
+        }
+
+        window.onload = initialize;
+    </script>
+
+</body>
+</html>
